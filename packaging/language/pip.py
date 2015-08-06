@@ -310,9 +310,11 @@ def main():
 
     # Automatically apply -e option to extra_args when source is a VCS url. VCS
     # includes those beginning with svn+, git+, hg+ or bzr+
+    has_vcs = False
     if name:
         if name.startswith('svn+') or name.startswith('git+') or \
                 name.startswith('hg+') or name.startswith('bzr+'):
+            has_vcs = True
             args_list = []  # used if extra_args is not used at all
             if extra_args:
                 args_list = extra_args.split(' ')
@@ -335,8 +337,7 @@ def main():
     if module.check_mode:
         if extra_args or requirements or state == 'latest' or not name:
             module.exit_json(changed=True)
-        elif name.startswith('svn+') or name.startswith('git+') or \
-                name.startswith('hg+') or name.startswith('bzr+'):
+        elif has_vcs:
             module.exit_json(changed=True)
 
         freeze_cmd = '%s freeze' % pip
@@ -353,7 +354,7 @@ def main():
         changed = (state == 'present' and not is_present) or (state == 'absent' and is_present)
         module.exit_json(changed=changed, cmd=freeze_cmd, stdout=out, stderr=err)
 
-    if requirements:
+    if requirements or has_vcs:
         freeze_cmd = '%s freeze' % pip
         out_freeze_before = module.run_command(freeze_cmd, cwd=this_dir)[1]
     else:
